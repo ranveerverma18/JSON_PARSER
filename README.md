@@ -1,10 +1,3 @@
-Perfect timing 🔥 Ranveer — a well-written **README** is what turns a cool project into an *impressive* one on GitHub.
-Let’s make it professional, clean, and tailored to your parser exactly as you built it.
-
-Here’s a ready-to-use template (you can copy this into a file named `README.md` in your repo):
-
----
-
 # 🧩 JSON Parser in C++
 
 ### 📖 Overview
@@ -135,7 +128,4 @@ Curious learner passionate about systems programming and data engineering.
 > Built a complete JSON parser from scratch using modern C++.
 > Supports reading, parsing, accessing, and modifying JSON structures with a custom data model.
 
----
-
-Would you like me to customize this further with **badges**, a **project banner**, and **GitHub markdown formatting** (for better visuals on your repo page)?
 
