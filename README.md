@@ -1,9 +1,16 @@
 # 🧩 JSON Parser in C++
 
 ### 📖 Overview
+A fully functional **JSON parser built from scratch in modern C++**, capable of:
 
-A fully functional **JSON parser built from scratch in C++**, capable of tokenizing, parsing, building a JSON tree, and pretty-printing or modifying JSON data.
-Implements a **recursive-descent parser** based on JSON grammar rules and uses modern C++ features such as `std::variant`, `std::shared_ptr`, and operator overloading.
+- Tokenizing raw JSON text  
+- Parsing it using a recursive-descent parser  
+- Building a rich JSON tree (`JSONValue`) using `std::variant`  
+- Pretty-printing JSON  
+- Modifying JSON dynamically using operator overloading  
+- Re-serializing JSON back into formatted text  
+
+This project demonstrates how real JSON libraries (like RapidJSON or nlohmann/json) work internally.
 
 ---
 
@@ -14,27 +21,70 @@ Implements a **recursive-descent parser** based on JSON grammar rules and uses m
 ✅ **Data Model (`JSONValue`)** – Holds strings, numbers, booleans, nulls, arrays, and objects
 ✅ **Pretty Printer** – Outputs formatted, human-readable JSON
 ✅ **Interactive Access** – Use `root["key"]` or `root["array"][i]` to read or modify data
+✅ **Serialization** – Converts the JSON tree back into JSON text
 ✅ **Modern C++ Design** – Uses RAII, smart pointers, and `std::variant` for safety and clarity
 
 ---
 
 ## 🧠 Architecture
 
-```
-json_parser/
-├── include/
-│   ├── Token.h          # Token definitions
-│   ├── tokenizer.h      # Tokenizer class
-│   ├── parser.h         # Parser + JSONValue class
-│   ├── JSONPrinter.h    # Pretty printing utility
-├── src/
-│   ├── parser.cpp
-│   ├── JSONPrinter.cpp
-│   └── main.cpp
-└── README.md
-```
+┌─────────────────────────────┐
+│        RAW JSON TEXT        │
+│  (just characters in a      │
+│   string literal)           │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│         TOKENIZER           │
+│  Converts characters into   │
+│  meaningful tokens:         │
+│   { [ ] } : ,               │
+│   STRING("name")            │
+│   NUMBER(21)                │
+│   TRUE / FALSE / NULL       │
+└──────────────┬──────────────┘
+               │   vector<Token>
+               ▼
+┌─────────────────────────────┐
+│           PARSER            │
+│  Recursive descent parser   │
+│  builds a real JSON tree:   │
+│   - objects (map)           │
+│   - arrays (vector)         │
+│   - strings                 │
+│   - numbers                 │
+│   - bool / null             │
+│                             │
+│  Output: JSONValue root     │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│        JSON TREE            │
+│   (in-memory representation)│
+│                             │
+│ You can do:                 │
+│   root["name"]              │
+│   root["marks"][1]          │
+│   root["profile"]["year"]   │
+│   modify values             │
+│   insert/delete nodes       │
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│        SERIALIZER           │
+│  Takes the JSON tree and    │
+│  rebuilds JSON text.        │
+│                             │
+│ Indented pretty output:     │
+│  {                          │
+│    "age": 21,               │
+│    "name": "XYZ"            │
+│  }                          │
+└─────────────────────────────┘
 
----
 
 ## 📚 Grammar Used
 
