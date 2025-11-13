@@ -1,14 +1,22 @@
 #pragma once
 
-#include<bits/stdc++.h>
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <variant>
+#include <memory>
+#include <stdexcept>
+
 #include "tokenizer.h"
+
 using namespace std;
+
 struct JSONValue; // forward declaring the structure
 
-using JSONArray = std::vector<std::shared_ptr<JSONValue>>;
-using JSONObject = std::unordered_map<std::string, std::shared_ptr<JSONValue>>;
+using JSONArray = vector<shared_ptr<JSONValue>>;
+using JSONObject = unordered_map<string, shared_ptr<JSONValue>>;
 
-struct JSONValue : std::variant<
+struct JSONValue : variant<
     string,
     double,
     bool,
@@ -32,7 +40,7 @@ struct JSONValue : std::variant<
     const JSONArray& asArray() const { return get<JSONArray>(*this); }
     const JSONObject& asObject() const { return get<JSONObject>(*this); }
 
-    // --- Mutable accessors ---
+    // --- Mutable Accessors ---
     JSONArray& asArray() { return get<JSONArray>(*this); }
     JSONObject& asObject() { return get<JSONObject>(*this); }
 

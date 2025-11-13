@@ -1,6 +1,6 @@
 #include "../include/JSONPrinter.h"
 using namespace std;
-
+#include "../include/parser.h"
 void JSONPrinter::printIndent(int indent) {
     for (int i = 0; i < indent; ++i) {
         cout << ' ';

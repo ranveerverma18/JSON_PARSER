@@ -2,6 +2,7 @@
 #include "../include/tokenizer.h"
 #include "../include/parser.h"
 #include "../include/JSONPrinter.h"
+#include "../include/JSONSerializer.h"    
 
 int main() {
     std::string input = R"({
@@ -42,12 +43,19 @@ int main() {
         JSONPrinter::print(root);
         std::cout << "\n";
 
+       
+        // serializing the json tree back into the json string format
+        std::cout << "\n Serialized JSON (after modifications):\n";
+        std::string serialized = JSONSerializer::serialize(root);
+        std::cout << serialized << "\n";   // Pretty JSON output
+
     } catch (const std::exception& e) {
         std::cerr << "❌ Error: " << e.what() << std::endl;
     }
 
     return 0;
 }
+
 
 
 
