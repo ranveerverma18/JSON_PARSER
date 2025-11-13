@@ -16,166 +16,152 @@ This project demonstrates how real JSON libraries (like RapidJSON or nlohmann/js
 
 ## ⚙️ Features
 
-✅ **Tokenization** – Converts raw JSON text into a sequence of tokens (`{`, `[`, `,`, `:`, strings, numbers, etc.)
-✅ **Parsing** – Follows formal grammar rules to build a nested JSON tree
-✅ **Data Model (`JSONValue`)** – Holds strings, numbers, booleans, nulls, arrays, and objects
-✅ **Pretty Printer** – Outputs formatted, human-readable JSON
-✅ **Interactive Access** – Use `root["key"]` or `root["array"][i]` to read or modify data
-✅ **Serialization** – Converts the JSON tree back into JSON text
-✅ **Modern C++ Design** – Uses RAII, smart pointers, and `std::variant` for safety and clarity
+- ✅ **Tokenization** – Converts raw JSON text into a sequence of tokens  
+- ✅ **Parsing** – Builds a nested JSON tree following JSON grammar  
+- ✅ **Data Model (`JSONValue`)** – Holds strings, numbers, booleans, nulls, arrays, objects  
+- ✅ **Pretty Printer** – Outputs formatted, human-readable JSON  
+- ✅ **Serialization** – Converts the JSON tree back into JSON text  
+
 
 ---
 
 ## 🧠 Architecture
 
-┌─────────────────────────────┐
-│        RAW JSON TEXT        │
-│  (just characters in a      │
-│   string literal)           │
-└──────────────┬──────────────┘
-               │
-               ▼
-┌─────────────────────────────┐
-│         TOKENIZER           │
-│  Converts characters into   │
-│  meaningful tokens:         │
-│   { [ ] } : ,               │
-│   STRING("name")            │
-│   NUMBER(21)                │
-│   TRUE / FALSE / NULL       │
-└──────────────┬──────────────┘
-               │   vector<Token>
-               ▼
-┌─────────────────────────────┐
-│           PARSER            │
-│  Recursive descent parser   │
-│  builds a real JSON tree:   │
-│   - objects (map)           │
-│   - arrays (vector)         │
-│   - strings                 │
-│   - numbers                 │
-│   - bool / null             │
-│                             │
-│  Output: JSONValue root     │
-└──────────────┬──────────────┘
-               │
-               ▼
-┌─────────────────────────────┐
-│        JSON TREE            │
-│   (in-memory representation)│
-│                             │
-│ You can do:                 │
-│   root["name"]              │
-│   root["marks"][1]          │
-│   root["profile"]["year"]   │
-│   modify values             │
-│   insert/delete nodes       │
-└──────────────┬──────────────┘
-               │
-               ▼
-┌─────────────────────────────┐
-│        SERIALIZER           │
-│  Takes the JSON tree and    │
-│  rebuilds JSON text.        │
-│                             │
-│ Indented pretty output:     │
-│  {                          │
-│    "age": 21,               │
-│    "name": "XYZ"            │
-│  }                          │
-└─────────────────────────────┘
+The JSON processing pipeline in this project follows four clear stages:
 
+### 1. Raw JSON Text  
+You start with a plain JSON string:
+- Characters like `{`, `}`, `[`, `]`, `"`, `:`, `,`
+- Numbers, booleans, null, etc.
+
+---
+
+### 2. Tokenizer  
+The tokenizer scans the raw text and converts it into a sequence of tokens:
+- Structural tokens: `{`, `}`, `[`, `]`, `:`, `,`
+- STRING tokens
+- NUMBER tokens
+- TRUE / FALSE / NULL tokens
+
+**Output:** `vector<Token>`
+
+---
+
+### 3. Parser  
+A recursive-descent parser processes the token stream and builds a hierarchical JSON tree.
+
+The tree consists of:
+- Objects (unordered_map<string, JSONValue>)
+- Arrays (vector<JSONValue>)
+- Strings
+- Numbers
+- Booleans
+- Null
+
+**Output:** `JSONValue root` (a complete JSON tree)
+
+---
+
+### 4. JSON Tree (In-Memory Representation)  
+You can now interact with JSON like native C++ objects:
+- `root["name"]`
+- `root["marks"][1]`
+- `root["profile"]["year"]`
+
+You can also modify the tree:
+- change values  
+- insert nodes  
+- update arrays  
+
+---
+### 5. Serializer  
+The serializer walks the JSON tree and converts it back into human-readable JSON text.
+
+---
 
 ## 📚 Grammar Used
-
-```
 JSON        → VALUE
+
 VALUE       → OBJECT | ARRAY | STRING | NUMBER | TRUE | FALSE | NULL
+
 OBJECT      → { MEMBERS }
+
 MEMBERS     → PAIR | PAIR , MEMBERS
+
 PAIR        → STRING : VALUE
+
 ARRAY       → [ ELEMENTS ]
+
 ELEMENTS    → VALUE | VALUE , ELEMENTS
-```
+
 
 ---
 
-## 🚀 How to Build & Run
+## 🚀 How to Clone, Build & Run
 
-```bash
-g++ src/*.cpp -o main.exe
-.\main.exe
-```
+### 1️⃣ Clone the repository
+Replace the URL with your repository if different.
 
-### Example Output
-
-```
-{
-  "profile": {
-    "college": "SRCC",
-    "year": 3
-  },
-  "marks": [98, 99, 93],
-  "nickname": null,
-  "height": -5.8,
-  "student": true,
-  "age": 21,
-  "name": "Ranveer"
-}
-```
+    git clone https://github.com/your-username/your-repo-name.git
+    cd your-repo-name
 
 ---
 
-## 🧩 Usage Example (Interactive Access)
+### 2️⃣ Build the project
+Make sure you have a C++17-capable compiler (g++ or clang++). From the project root run:
 
-```cpp
-cout << root["name"].asString();             // "Ranveer"
-cout << root["profile"]["college"].asString(); // "SRCC"
-root["age"] = JSONValue(21.0);
-root["marks"][1] = JSONValue(99.0);
-```
+    g++ -std=c++17 src/*.cpp -Iinclude -o jsonparser.exe
+
+*If you prefer a different output name / OS:*
+- Linux/macOS: `./jsonparser.exe`
+- Windows (PowerShell/CMD): `jsonparser.exe`
 
 ---
 
+### 3️⃣ Run the program
+By default `main.cpp` contains a test JSON string. To run:
+
+    jsonparser.exe
+
+You should see pretty-printed JSON output in the terminal.
+
+---
 ## 🧠 Concepts Implemented
 
-* Recursive-descent parsing
-* Token stream processing
-* Abstract syntax tree (DOM-style structure)
-* Operator overloading
-* Type-safe access via `std::variant`
+- Recursive-descent parsing  
+- Token stream processing  
+- JSON DOM (tree) construction  
+- Operator overloading for intuitive access  
+- Type-safe variant-based JSON storage  
+- Smart pointer based memory management  
+- Pretty-printing of nested structures  
+- Serialization (tree -> JSON string)
 
 ---
 
-## 🧰 Technologies
+## 🧰 Technologies Used
 
-* **Language:** C++17
-* **Compiler:** g++ / clang++
-* **Paradigm:** Object-oriented + functional elements
-
----
-
-## 🧑‍💻 Author
-
-**Ranveer Verma**
-Curious learner passionate about systems programming and data engineering.
-
-> “I built this project to understand how JSON parsers work under the hood — from tokenization to syntax validation to data manipulation.”
+- Language: C++17  
+- Compiler: g++, Clang++, or MinGW  
+- Paradigms: OOP + Functional + Recursive Parsing  
+- STL Components: variant, vector, unordered_map, shared_ptr
 
 ---
 
-## 🌟 Future Enhancements
+## 🏁 Summary
 
-* [ ] JSON serialization (`toJSONString()`)
-* [ ] File read/write support
-* [ ] CLI tool for pretty-printing JSON files
-* [ ] Minify / Beautify modes
+A complete JSON engine built from scratch in modern C++:
 
----
+- Tokenizer  
+- Parser  
+- JSON Tree (DOM)  
+- Pretty Printer  
+- Serializer  
+- Interactive Access & Modification  
 
-## 🏁 Quick Summary
+This project demonstrates how JSON processing works internally —  
+a great systems-level learning project and portfolio addition.
 
-> Built a complete JSON parser from scratch using modern C++.
-> Supports reading, parsing, accessing, and modifying JSON structures with a custom data model.
+
 
 
