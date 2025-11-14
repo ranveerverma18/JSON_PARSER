@@ -78,3 +78,50 @@ string JSONSerializer::serialize(const shared_ptr<JSONValue>& ptr, int indent) {
     return serialize(*ptr, indent);
 }
 
+
+/* 
+====================== JSON SERIALIZER — RECURSION TREE ======================
+
+This is how the serializer calls itself recursively for a JSON like:
+
+{
+  "profile": {
+    "college": "Delhi University",
+    "year": 3
+  },
+  "marks": [98, 99, 93],
+  "nickname": null,
+  "height": -5.8,
+  "student": true,
+  "age": 21,
+  "name": "Ranveer"
+}
+
+CALL TREE (indent value shown in parentheses):
+
+serialize(root, 0)                  // OBJECT
+│
+├── serialize(profile_value, 1)
+│   └── serialize(profile_object, 2)
+│       ├── serialize("Delhi University", 3)
+│       └── serialize(3, 3)
+│
+├── serialize(marks_value, 1)
+│   └── serialize(marks_array, 2)
+│       ├── serialize(98, 3)
+│       ├── serialize(99, 3)
+│       └── serialize(93, 3)
+│
+├── serialize(null, 1)
+├── serialize(-5.8, 1)
+├── serialize(true, 1)
+├── serialize(21, 1)
+└── serialize("Ranveer", 1)
+
+NOTES:
+- indent = depth level inside nested objects/arrays
+- indentString(indent) prints (indent * 2) spaces
+- Arrays and objects increase indent by +1 for their contents
+- Each call returns a string to its parent, building the final JSON
+==============================================================================
+*/

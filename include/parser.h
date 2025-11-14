@@ -1,4 +1,4 @@
-#pragma once
+#pragma once   //the function of this is that it prevents multiple inclusions of the same header file in a single compilation unit.
 
 #include <string>
 #include <vector>
@@ -7,6 +7,7 @@
 #include <memory>
 #include <stdexcept>
 
+// The tokenizer.h header is included to provide the Tokenizer class and related token definitions.
 #include "tokenizer.h"
 
 using namespace std;
@@ -85,6 +86,97 @@ private:
 
 
 
+/* 
+====================== JSON PARSER — RECURSIVE DESCENT ======================
+
+This Parser consumes the list of tokens produced by Tokenizer and builds
+a recursive JSONValue tree using the following grammar:
+
+GRAMMAR (JSON Standard):
+
+  value
+      → object
+      | array
+      | string
+      | number
+      | true | false | null
+
+  object
+      → '{' '}'
+      | '{' members '}'
+
+  members
+      → pair
+      | pair ',' members
+
+  pair
+      → STRING ':' value
+
+  array
+      → '[' ']'
+      | '[' elements ']'
+
+  elements
+      → value
+      | value ',' elements
+
+PARSER FUNCTIONS & WHAT THEY PARSE:
+
+  parse()          → starts parsing at 'value'
+  parseValue()     → detects type (string/num/obj/arr/bool/null)
+  parseObject()    → parses {...} and key-value pairs recursively
+  parseArray()     → parses [...] and values recursively
+
+CONTROL FLOW EXAMPLE:
+  - parse() calls parseValue()
+  - parseValue() sees '{' → calls parseObject()
+  - parseObject() sees key → calls parseValue() for its value
+  - nested objects/arrays trigger more recursive calls
+
+The output of parse() is a fully built JSONValue tree that
+matches the structure of the input JSON text.
+
+=============================================================================
+*/
+
+
+
+
+
+/* 
+====================== JSONVALUE — INTERNAL JSON TREE NODE ======================
+
+JSONValue represents ANY JSON element using std::variant:
+
+  JSONValue = variant<
+      string,         // JSON string
+      double,         // JSON number
+      bool,           // true / false
+      nullptr_t,      // null
+      JSONArray,      // vector<shared_ptr<JSONValue>>
+      JSONObject      // unordered_map<string, shared_ptr<JSONValue>>
+  >
+
+ARRAY = JSONArray = vector<shared_ptr<JSONValue>>
+OBJECT = JSONObject = unordered_map<string, shared_ptr<JSONValue>>
+
+REASONS FOR USING shared_ptr<JSONValue>:
+  - Avoid copying large JSON subtrees
+  - Allows recursive structures naturally
+  - Makes operator[] easy: returns references into object/array
+
+ACCESSORS:
+  - isString(), isNumber(), isArray() ...
+  - asString(), asArray() ...
+
+OPERATOR[]:
+  - obj["key"] gives reference to its JSONValue
+  - arr[index] gives reference to element
+
+This structure makes JSON recursion, modification, and serialization simple.
+
+===============================================================================
+*/
 
 
 

@@ -120,3 +120,45 @@ public:
         return tokens;
     }
 };
+
+
+/* 
+====================== TOKENIZER — HOW IT WORKS ======================
+
+The Tokenizer reads the input string character-by-character and emits
+a sequence of tokens that the Parser will consume.
+
+MAIN TOKEN TYPES:
+  - { , } , [ , ]
+  - : , ,
+  - STRING
+  - NUMBER
+  - true / false
+  - null
+
+HOW TOKENIZATION WORKS (STEP-BY-STEP):
+
+1. Skip whitespace (space, tab, newline)
+
+2. If a '{' is seen → emit TokenType::LBRACE
+3. If a '[' is seen → emit TokenType::LBRACKET
+4. If a ':' or ',' is seen → emit corresponding token
+
+5. If a '"' is seen:
+      begin reading a STRING
+      read characters until next '"'
+      (later improvements: handle escape sequences)
+
+6. If a digit or '-' starts:
+      read characters of NUMBER
+      supports integers and decimals
+
+7. If 't', 'f', or 'n' appears:
+      read literal true / false / null
+
+8. If unknown character appears → throw error
+
+The output is a flat vector<Token> which the Parser reads sequentially.
+
+======================================================================
+*/
