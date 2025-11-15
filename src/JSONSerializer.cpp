@@ -1,16 +1,54 @@
 #include "JSONSerializer.h"
 #include <sstream>
+#include <bits/stdc++.h>
 
 using namespace std;
 
+// -------------------------------------------------------
+// Create indentation (2 spaces * depth)
+// -------------------------------------------------------
 string JSONSerializer::indentString(int indent) {
     return string(indent * 2, ' ');
 }
 
+// -------------------------------------------------------
+// Escape strings to be valid JSON
+// -------------------------------------------------------
+string JSONSerializer::escapeString(const std::string& s) {
+    ostringstream out;
+
+    for (char c : s) {
+        switch (c) {
+            case '\"': out << "\\\""; break;       // quote
+            case '\\': out << "\\\\"; break;       // backslash
+            case '\b': out << "\\b";  break;       // backspace
+            case '\f': out << "\\f";  break;       // form feed
+            case '\n': out << "\\n";  break;       // newline
+            case '\r': out << "\\r";  break;       // carriage return
+            case '\t': out << "\\t";  break;       // tab
+
+            default:
+                if (static_cast<unsigned char>(c) < 0x20) {
+                    out << "\\u"
+                        << std::uppercase << std::hex
+                        << setw(4) << setfill('0')
+                        << (int)c;
+                } else {
+                    out << c;
+                }
+        }
+    }
+    return out.str();
+}
+
+// -------------------------------------------------------
+// Main serialize function
+// -------------------------------------------------------
 string JSONSerializer::serialize(const JSONValue& value, int indent) {
+
     // STRING
     if (value.isString()) {
-        return "\"" + value.asString() + "\"";
+        return "\"" + escapeString(value.asString()) + "\"";
     }
 
     // NUMBER
@@ -59,7 +97,7 @@ string JSONSerializer::serialize(const JSONValue& value, int indent) {
         size_t count = 0;
         for (auto& p : obj) {
             out << indentString(indent + 1)
-                << "\"" << p.first << "\": "
+                << "\"" << escapeString(p.first) << "\": "
                 << serialize(p.second, indent + 1);
 
             if (++count < obj.size())
@@ -71,12 +109,79 @@ string JSONSerializer::serialize(const JSONValue& value, int indent) {
         out << indentString(indent) << "}";
         return out.str();
     }
+
     return "";
 }
 
+string JSONSerializer::serializeCompact(const JSONValue& value) {
+    // STRING
+    if (value.isString()) {
+        return "\"" + escapeString(value.asString()) + "\"";
+    }
+
+    // NUMBER
+    if (value.isNumber()) {
+        ostringstream ss;
+        ss << value.asNumber();
+        return ss.str();
+    }
+
+    // BOOLEAN
+    if (value.isBool()) {
+        return value.asBool() ? "true" : "false";
+    }
+
+    // NULL
+    if (value.isNull()) {
+        return "null";
+    }
+
+    // ARRAY
+    if (value.isArray()) {
+        const JSONArray& arr = value.asArray();
+        ostringstream out;
+        out << "[";
+
+        for (size_t i = 0; i < arr.size(); i++) {
+            out << serializeCompact(*arr[i]);
+
+            if (i + 1 < arr.size())
+                out << ",";
+        }
+
+        out << "]";
+        return out.str();
+    }
+
+    // OBJECT
+    if (value.isObject()) {
+        const JSONObject& obj = value.asObject();
+        ostringstream out;
+        out << "{";
+
+        size_t count = 0;
+        for (auto& p : obj) {
+            out << "\"" << escapeString(p.first) << "\":"
+                << serializeCompact(*p.second);
+
+            if (++count < obj.size())
+                out << ",";
+        }
+
+        out << "}";
+        return out.str();
+    }
+
+    return "";
+}
+
+// -------------------------------------------------------
+// Pointer overload
+// -------------------------------------------------------
 string JSONSerializer::serialize(const shared_ptr<JSONValue>& ptr, int indent) {
     return serialize(*ptr, indent);
 }
+
 
 
 /* 

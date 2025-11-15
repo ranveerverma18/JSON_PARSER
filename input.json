@@ -1,0 +1,17 @@
+{
+  "name": "Ranveer",
+  "age": 21,
+  "student": true,
+  "height": -5.8,
+  "nickname": null,
+  "marks": [
+    98,
+    95,
+    93
+  ],
+  "profile": {
+    "year": 3,
+    "college": "SRCC"
+  },
+  "message": "Hello\tWorld\nHe said \"Yo!\" \\ Backslash and \b backspace"
+}

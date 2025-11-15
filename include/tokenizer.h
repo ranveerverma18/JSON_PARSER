@@ -57,22 +57,65 @@ public:
 
     throw std::runtime_error(std::string("Unexpected character: ") + c);
 }
-
-    // Handling the string tokens
-    Token stringToken() {
-        std::string value;
-
-    while (!isAtEnd() && peek() != '"') {
-        value += advance();
-    }
-
-    if (isAtEnd()) throw std::runtime_error("Unterminated string literal");
-
-    advance(); // Skip closing quote
-    return Token(TokenType::STRING, value);
-    }
-
     
+    // Handling the string tokens
+    // ------------------------------------------------------------
+// STRING TOKEN PARSING (CRITICAL)
+//
+// JSON strings may contain escaped characters: \" \\ \n \t \b etc.
+// The OLD tokenizer treated every " as the end of the string,
+// even when it was escaped like \".
+//
+// That caused the tokenizer to prematurely close the string when
+// encountering \" inside text such as:
+//
+//      "He said \"Yo!\""
+//
+// and then the parser saw `Yo` as a separate keyword => ERROR.
+//
+// This updated stringToken() properly handles escape sequences.
+// Only an UNESCAPED " ends the string.
+//
+// VERY IMPORTANT FOR VALID JSON PARSING.
+// ------------------------------------------------------------
+
+    Token stringToken() {
+    std::string value;
+
+    while (!isAtEnd()) {
+        char c = advance();
+
+        if (c == '\\') {
+            // Handle escape sequences
+            if (isAtEnd()) throw std::runtime_error("Invalid escape at end of string");
+
+            char next = advance();
+            switch (next) {
+                case '"':  value += '\"'; break;
+                case '\\': value += '\\'; break;
+                case '/':  value += '/';  break;
+                case 'b':  value += '\b'; break;
+                case 'f':  value += '\f'; break;
+                case 'n':  value += '\n'; break;
+                case 'r':  value += '\r'; break;
+                case 't':  value += '\t'; break;
+
+                default:
+                    throw std::runtime_error(std::string("Invalid escape sequence: \\") + next);
+            }
+        }
+        else if (c == '"') {
+            // End of string
+            return Token(TokenType::STRING, value);
+        }
+        else {
+            value += c;
+        }
+    }
+
+    throw std::runtime_error("Unterminated string literal");
+}
+
     // Handling number tokens
     Token numberToken(char firstChar) {
         std::string value(1, firstChar);
