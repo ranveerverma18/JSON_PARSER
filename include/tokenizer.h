@@ -4,12 +4,14 @@
 #include <cctype>
 #include <stdexcept>
 #include "token.h"
-#include<bits/stdc++.h>
 
+// Tokenizer with line + column tracking
 class Tokenizer {
 private:
     std::string input;
-    size_t pos = 0; // current position in string
+    size_t pos = 0;      // index into input
+    int line = 1;        // current line number
+    int column = 1;      // current column number
 
 public:
     Tokenizer(const std::string& text) : input(text) {}
@@ -22,43 +24,74 @@ public:
         return isAtEnd() ? '\0' : input[pos];
     }
 
+    // Advance one character and update line + column
     char advance() {
-        return isAtEnd() ? '\0' : input[pos++];
+        if (isAtEnd())
+            return '\0';
+
+        char c = input[pos++];
+
+        if (c == '\n') {
+            line++;
+            column = 1;
+        } else {
+            column++;
+        }
+
+        return c;
+    }
+
+    // Looking at next next character without consuming
+    char peekNext() const {
+        return (pos + 1 >= input.size()) ? '\0' : input[pos + 1];
     }
 
     void skipWhitespace() {
-        while (!isAtEnd() && std::isspace(peek()))
-            pos++;
+        while (!isAtEnd() && std::isspace(peek())) {
+            advance(); // advance handles line/column counting
+        }
     }
 
-    // Recognize simple symbol tokens
+    // ====================================================
+    // Main token dispatcher
+    // ====================================================
     Token nextToken() {
-    skipWhitespace();
-    if (isAtEnd())
-        return Token(TokenType::END_OF_FILE);
+        skipWhitespace();
 
-    char c = advance();
+        int tokenLine = line;
+        int tokenCol  = column;
 
-    switch (c) {
-        case '{': return Token(TokenType::LBRACE);
-        case '}': return Token(TokenType::RBRACE);
-        case '[': return Token(TokenType::LBRACKET);
-        case ']': return Token(TokenType::RBRACKET);
-        case ':': return Token(TokenType::COLON);
-        case ',': return Token(TokenType::COMMA);
-        case '"': return stringToken(); // handle strings
+        if (isAtEnd())
+            return Token(TokenType::END_OF_FILE, "", tokenLine, tokenCol);
+
+        char c = advance();
+
+        switch (c) {
+            case '{': return Token(TokenType::LBRACE,   "{", tokenLine, tokenCol);
+            case '}': return Token(TokenType::RBRACE,   "}", tokenLine, tokenCol);
+            case '[': return Token(TokenType::LBRACKET, "[", tokenLine, tokenCol);
+            case ']': return Token(TokenType::RBRACKET, "]", tokenLine, tokenCol);
+            case ':': return Token(TokenType::COLON,    ":", tokenLine, tokenCol);
+            case ',': return Token(TokenType::COMMA,    ",", tokenLine, tokenCol);
+
+            case '"':
+                return stringToken(tokenLine, tokenCol);
+        }
+
+        if (isdigit(c) || c == '-')
+            return numberToken(c, tokenLine, tokenCol);
+
+        if (isalpha(c))
+            return keywordToken(c, tokenLine, tokenCol);
+
+        throw std::runtime_error(
+            "Unexpected character '" + std::string(1, c) +
+            "' at line " + std::to_string(tokenLine) +
+            ", column " + std::to_string(tokenCol)
+        );
     }
 
-    // Numbers can start with digit or '-'
-    if (isdigit(c) || c == '-') return numberToken(c);
-
-    // Keywords like true, false, null start with letter
-    if (isalpha(c)) return keywordToken(c);
-
-    throw std::runtime_error(std::string("Unexpected character: ") + c);
-}
-    
-    // Handling the string tokens
+        // Handling the string tokens
     // ------------------------------------------------------------
 // STRING TOKEN PARSING (CRITICAL)
 //
@@ -78,91 +111,113 @@ public:
 //
 // VERY IMPORTANT FOR VALID JSON PARSING.
 // ------------------------------------------------------------
+    Token stringToken(int tokenLine, int tokenCol) {
+        std::string value;
 
-    Token stringToken() {
-    std::string value;
+        while (!isAtEnd()) {
+            char c = advance();
 
-    while (!isAtEnd()) {
-        char c = advance();
+            if (c == '\\') {
+                if (isAtEnd())
+                    throw std::runtime_error("Invalid escape at end of string at line "
+                        + std::to_string(line) + ", column " + std::to_string(column));
 
-        if (c == '\\') {
-            // Handle escape sequences
-            if (isAtEnd()) throw std::runtime_error("Invalid escape at end of string");
+                char next = advance();
+                switch (next) {
+                    case '"':  value += '\"'; break;
+                    case '\\': value += '\\'; break;
+                    case '/':  value += '/';  break;
+                    case 'b':  value += '\b'; break;
+                    case 'f':  value += '\f'; break;
+                    case 'n':  value += '\n'; break;
+                    case 'r':  value += '\r'; break;
+                    case 't':  value += '\t'; break;
 
-            char next = advance();
-            switch (next) {
-                case '"':  value += '\"'; break;
-                case '\\': value += '\\'; break;
-                case '/':  value += '/';  break;
-                case 'b':  value += '\b'; break;
-                case 'f':  value += '\f'; break;
-                case 'n':  value += '\n'; break;
-                case 'r':  value += '\r'; break;
-                case 't':  value += '\t'; break;
-
-                default:
-                    throw std::runtime_error(std::string("Invalid escape sequence: \\") + next);
+                    default:
+                        throw std::runtime_error("Invalid escape sequence: \\" 
+                            + std::string(1, next) +
+                            " at line " + std::to_string(line) +
+                            ", column " + std::to_string(column));
+                }
+            }
+            else if (c == '"') {
+                return Token(TokenType::STRING, value, tokenLine, tokenCol);
+            }
+            else {
+                value += c;
             }
         }
-        else if (c == '"') {
-            // End of string
-            return Token(TokenType::STRING, value);
-        }
-        else {
-            value += c;
-        }
+
+        throw std::runtime_error("Unterminated string literal at line "
+            + std::to_string(tokenLine) +
+            ", column " + std::to_string(tokenCol));
     }
 
-    throw std::runtime_error("Unterminated string literal");
-}
-
-    // Handling number tokens
-    Token numberToken(char firstChar) {
+    // ====================================================
+    // Parse NUMBER tokens
+    // ====================================================
+    Token numberToken(char firstChar, int tokenLine, int tokenCol) {
         std::string value(1, firstChar);
-        bool hasDecimal = false; 
-        while(!isAtEnd()){
+        bool hasDecimal = false;
+
+        while (!isAtEnd()) {
             char c = peek();
+
             if (isdigit(c)) {
                 value += advance();
-            } else if (c == '.' && !hasDecimal) {
+            }
+            else if (c == '.' && !hasDecimal) {
                 hasDecimal = true;
                 value += advance();
-            } else {
-                break;
+            }
+            else break;
         }
+
+        if (value.back() == '.')
+            throw std::runtime_error("Invalid number format: " + value +
+                " at line " + std::to_string(tokenLine) +
+                ", column " + std::to_string(tokenCol));
+
+        return Token(TokenType::NUMBER, value, tokenLine, tokenCol);
     }
-        if(value.back()=='.')
-            throw std::runtime_error("Invalid number format: " + value);
-        return Token(TokenType::NUMBER, value);
-  }
 
-
-    // Handling keywords: true, false, null
-    Token keywordToken(char firstChar) {
+    // ====================================================
+    // Parse keywords: true / false / null
+    // ====================================================
+    Token keywordToken(char firstChar, int tokenLine, int tokenCol) {
         std::string word(1, firstChar);
 
-    while (!isAtEnd() && isalpha(peek()))
-        word += advance();
+        while (!isAtEnd() && isalpha(peek()))
+            word += advance();
 
-    if (word == "true") return Token(TokenType::TRUE);
-    if (word == "false") return Token(TokenType::FALSE);
-    if (word == "null") return Token(TokenType::NUL);
+        if (word == "true")
+            return Token(TokenType::TRUE, word, tokenLine, tokenCol);
+        if (word == "false")
+            return Token(TokenType::FALSE, word, tokenLine, tokenCol);
+        if (word == "null")
+            return Token(TokenType::NUL, word, tokenLine, tokenCol);
 
-    throw std::runtime_error("Unexpected keyword: " + word);
+        throw std::runtime_error("Unexpected keyword \"" + word +
+            "\" at line " + std::to_string(tokenLine) +
+            ", column " + std::to_string(tokenCol));
     }
 
-
-    // Collect all tokens
+    // ====================================================
+    // TOKENIZE ENTIRE INPUT
+    // ====================================================
     std::vector<Token> tokenize() {
         std::vector<Token> tokens;
         Token token = nextToken();
+
         while (token.type != TokenType::END_OF_FILE) {
             tokens.push_back(token);
             token = nextToken();
         }
+
         return tokens;
     }
 };
+
 
 
 /* 
@@ -205,3 +260,7 @@ The output is a flat vector<Token> which the Parser reads sequentially.
 
 ======================================================================
 */
+
+
+
+

@@ -2,45 +2,106 @@
 #include <iostream>
 #include <memory>
 #include <cstdlib>
+#include <sstream>
+
+// Helper: friendly token type name (for messages)
+static std::string tokenTypeName(TokenType t) {
+    switch (t) {
+        case TokenType::LBRACE:   return "'{'";
+        case TokenType::RBRACE:   return "'}'";
+        case TokenType::LBRACKET: return "'['";
+        case TokenType::RBRACKET: return "']'";
+        case TokenType::COLON:    return "':'";
+        case TokenType::COMMA:    return "','";
+        case TokenType::STRING:   return "string";
+        case TokenType::NUMBER:   return "number";
+        case TokenType::TRUE:     return "'true'";
+        case TokenType::FALSE:    return "'false'";
+        case TokenType::NUL:      return "'null'";
+        case TokenType::END_OF_FILE: return "<EOF>";
+    }
+    return "token";
+}
 
 bool Parser::isAtEnd() const {
-    return pos >= tokens.size() || tokens[pos].type == TokenType::END_OF_FILE;
+    return pos >= tokens.size();
 }
 
 const Token& Parser::peek() const {
-    if (pos >= tokens.size()) throw std::runtime_error("Unexpected end of tokens (peek)");
+    if (pos >= tokens.size()) {
+        // If no tokens available, provide best-effort position (end of input)
+        if (!tokens.empty()) {
+            const Token& last = tokens.back();
+            throw JSONParseError("Unexpected end of input", last.line, last.column);
+        } else {
+            throw JSONParseError("Unexpected end of input", 1, 1);
+        }
+    }
     return tokens[pos];
 }
 
 const Token& Parser::advance() {
-    if (pos >= tokens.size()) throw std::runtime_error("Unexpected end of tokens (advance)");
+    if (pos >= tokens.size()) {
+        if (!tokens.empty()) {
+            const Token& last = tokens.back();
+            throw JSONParseError("Unexpected end of input", last.line, last.column);
+        } else {
+            throw JSONParseError("Unexpected end of input", 1, 1);
+        }
+    }
     return tokens[pos++];
 }
 
-void Parser::expect(TokenType type, const std::string& msg) {
-    if (isAtEnd() || peek().type != type)
-        throw std::runtime_error(msg);
+void Parser::expect(TokenType type, const std::string& expectedMessage) {
+    if (isAtEnd() || peek().type != type) {
+        if (isAtEnd()) {
+            if (!tokens.empty()) {
+                const Token& last = tokens.back();
+                throw JSONParseError(expectedMessage + " but reached end of input", last.line, last.column);
+            } else {
+                throw JSONParseError(expectedMessage + " but reached end of input", 1, 1);
+            }
+        } else {
+            const Token& t = peek();
+            std::ostringstream ss;
+            ss << expectedMessage << " but found " << tokenTypeName(t.type);
+            throw JSONParseError(ss.str(), t.line, t.column);
+        }
+    }
     advance();
 }
 
 JSONValue Parser::parse() {
-    return parseValue();
+    JSONValue v = parseValue();
+    // Accept if there are trailing tokens that aren't just EOF-like — if extra tokens present, it's an error.
+    if (!isAtEnd()) {
+        const Token& t = peek();
+        std::ostringstream ss;
+        ss << "Unexpected token after root value: " << tokenTypeName(t.type);
+        throw JSONParseError(ss.str(), t.line, t.column);
+    }
+    return v;
 }
 
 JSONValue Parser::parseValue() {
-    if (isAtEnd()) throw std::runtime_error("Unexpected end while parsing value");
+    if (isAtEnd()) throw JSONParseError("Unexpected end while parsing value", 1, 1);
 
     const Token &t = peek();
     switch (t.type) {
         case TokenType::LBRACE:  return parseObject();
         case TokenType::LBRACKET: return parseArray();
-        case TokenType::STRING:
+        case TokenType::STRING: {
             advance();
             return JSONValue(t.value);
+        }
         case TokenType::NUMBER: {
             advance();
-            double val = std::stod(t.value);
-            return JSONValue(val);
+            try {
+                double val = std::stod(t.value);
+                return JSONValue(val);
+            } catch (...) {
+                throw JSONParseError("Invalid number format: " + t.value, t.line, t.column);
+            }
         }
         case TokenType::TRUE:
             advance();
@@ -52,40 +113,58 @@ JSONValue Parser::parseValue() {
             advance();
             return JSONValue(nullptr);
         default:
-            throw std::runtime_error("Unexpected token when parsing value");
+            throw JSONParseError("Unexpected token when parsing value: " + tokenTypeName(t.type), t.line, t.column);
     }
 }
 
 JSONValue Parser::parseObject() {
+    // consume '{'
     expect(TokenType::LBRACE, "Expected '{' to start object");
 
-    JSONObject object; // ✅ uses shared_ptr<JSONValue>
+    JSONObject object; 
 
+    // empty object
     if (!isAtEnd() && peek().type == TokenType::RBRACE) {
         advance();
         return JSONValue(object);
     }
 
     while (true) {
-        if (isAtEnd() || peek().type != TokenType::STRING)
-            throw std::runtime_error("Expected string as object key");
+        if (isAtEnd()) {
+            throw JSONParseError("Unterminated object — expected string key or '}'", 1, 1);
+        }
 
-        std::string key = peek().value;
+        if (peek().type != TokenType::STRING) {
+            const Token &t = peek();
+            throw JSONParseError("Expected string as object key", t.line, t.column);
+        }
+
+        // key
+        const Token &keyTok = peek();
+        std::string key = keyTok.value;
         advance(); // consume key
 
+        // colon
         expect(TokenType::COLON, "Expected ':' after object key");
 
+        // value
         JSONValue value = parseValue();
         object.emplace(std::move(key), std::make_shared<JSONValue>(std::move(value)));
 
+        // comma or end
         if (!isAtEnd() && peek().type == TokenType::COMMA) {
-            advance();
+            advance(); // consume comma and continue
             continue;
         } else if (!isAtEnd() && peek().type == TokenType::RBRACE) {
-            advance();
+            advance(); // consume '}'
             break;
         } else {
-            throw std::runtime_error("Expected ',' or '}' after object pair");
+            if (isAtEnd()) {
+                throw JSONParseError("Unterminated object — expected ',' or '}'", 1, 1);
+            } else {
+                const Token &t = peek();
+                throw JSONParseError("Expected ',' or '}' after object pair", t.line, t.column);
+            }
         }
     }
 
@@ -93,10 +172,12 @@ JSONValue Parser::parseObject() {
 }
 
 JSONValue Parser::parseArray() {
+    // consume '['
     expect(TokenType::LBRACKET, "Expected '[' to start array");
 
-    JSONArray arr; // ✅ uses shared_ptr<JSONValue>
+    JSONArray arr; 
 
+    // empty array
     if (!isAtEnd() && peek().type == TokenType::RBRACKET) {
         advance();
         return JSONValue(arr);
@@ -106,6 +187,7 @@ JSONValue Parser::parseArray() {
         JSONValue v = parseValue();
         arr.push_back(std::make_shared<JSONValue>(std::move(v)));
 
+        // comma or end
         if (!isAtEnd() && peek().type == TokenType::COMMA) {
             advance();
             continue;
@@ -113,11 +195,17 @@ JSONValue Parser::parseArray() {
             advance();
             break;
         } else {
-            throw std::runtime_error("Expected ',' or ']' after array element");
+            if (isAtEnd()) {
+                throw JSONParseError("Unterminated array — expected ',' or ']'", 1, 1);
+            } else {
+                const Token &t = peek();
+                throw JSONParseError("Expected ',' or ']' after array element", t.line, t.column);
+            }
         }
     }
 
     return JSONValue(arr);
 }
+
 
 

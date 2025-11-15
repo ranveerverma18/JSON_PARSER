@@ -7,8 +7,7 @@
 #include <memory>
 #include <stdexcept>
 
-// The tokenizer.h header is included to provide the Tokenizer class and related token definitions.
-#include "tokenizer.h"
+#include "token.h"   // only need token definitions here
 
 using namespace std;
 
@@ -63,7 +62,23 @@ struct JSONValue : variant<
     }
 };
 
+// ----------------------
+// JSONParseError
+// ----------------------
+// Thrown by the parser when a syntactic error is encountered.
+// Contains a user-friendly message and the line/column where the error occurred.
+class JSONParseError : public std::runtime_error {
+public:
+    int line;
+    int column;
 
+    JSONParseError(const std::string &msg, int ln = 1, int col = 1)
+        : std::runtime_error(msg), line(ln), column(col) {}
+};
+
+// ----------------------
+// Parser
+// ----------------------
 class Parser {
 private:
     vector<Token> tokens;
@@ -77,11 +92,12 @@ private:
     bool isAtEnd() const;
     const Token& peek() const;
     const Token& advance();
-    void expect(TokenType type, const string& msg);
+    void expect(TokenType type, const std::string& expectedMessage);
     JSONValue parseValue();
     JSONValue parseObject();
     JSONValue parseArray();
 };
+
 
 
 

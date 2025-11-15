@@ -14,7 +14,8 @@ enum class TokenType {
 struct Token {
     TokenType type;
     std::string value;
-
-    Token(TokenType t, const std::string& v = "")
-        : type(t), value(v) {}
+    int line=1;
+    int column=1;
+    Token(TokenType t, const std::string& v = "",int ln=1,int col=1)
+        : type(t), value(v), line(ln), column(col) {}
 };
