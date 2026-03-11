@@ -1,6 +1,5 @@
 FROM ubuntu:22.04
 
-# install dependencies
 RUN apt-get update && apt-get install -y \
     g++ \
     python3 \
@@ -10,8 +9,8 @@ WORKDIR /app
 
 COPY . .
 
-# compile parser
-RUN g++ -std=c++17 src/*.cpp -Iinclude -o json_parser
+# compile C++ parser
+RUN g++ -std=c++17 src/*.cpp -Iinclude -I. -o json_parser
 
 # install python deps
 RUN pip3 install flask
