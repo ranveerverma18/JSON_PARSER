@@ -105,7 +105,11 @@ int main(int argc, char* argv[]) {
         // ===============================================================
         if (command == "pretty") {
             std::string pretty = JSONSerializer::serialize(root);
-
+            
+            if (argc >= 4 && std::string(argv[3]) == "stdout") {
+            std::cout << pretty << "\n";
+            return 0;
+            }
             std::string outputPath =
                 inputPath.substr(0, inputPath.find_last_of('.')) + "_pretty.json";
 
@@ -119,7 +123,11 @@ int main(int argc, char* argv[]) {
         // ===============================================================
         if (command == "minify") {
             std::string compact = JSONSerializer::serializeCompact(root);
-
+            
+            if(argc >= 4 && std::string(argv[3]) == "stdout") {
+                std::cout << compact << "\n";
+                return 0;
+            }
             std::string outputPath =
                 inputPath.substr(0, inputPath.find_last_of('.')) + "_minified.json";
 
@@ -132,7 +140,7 @@ int main(int argc, char* argv[]) {
         // 3) VALIDATE
         // ===============================================================
         if (command == "validate") {
-            std::cout << "✔ Valid JSON\n";
+            std::cout << "[OK] Valid JSON\n";
             return 0;
         }
 
@@ -183,6 +191,10 @@ int main(int argc, char* argv[]) {
             target = parseValueFromString(newValueStr);
 
             std::string updated = JSONSerializer::serialize(root);
+            if(argc >= 6 && std::string(argv[5]) == "stdout") {
+                std::cout << updated << "\n";
+                return 0;
+            }
             FileUtils::writeFile(inputPath, updated);
 
             std::cout << "✔ Updated value and saved to " << inputPath << "\n";
