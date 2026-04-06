@@ -1,68 +1,47 @@
-# 🗿JSON_PARSER
+# 🧩 JSON_PARSER
 
-A compact, readable C++ JSON tokenizer, parser, navigator and serializer library with utilities and a small demo CLI. Designed for learning, embedding into other projects, and incremental extension. Targets modern C++ (C++17 recommended).
+A compact C++17 JSON parser toolkit with:
+- Tokenizer
+- Recursive-descent parser
+- JSON AST (JSONValue)
+- Pretty and compact serializer
+- JSON path navigation and mutation helpers
+- CLI commands for real file workflows
+- Optional Flask API wrapper for HTTP usage
 
----
+This project is built for learning, extension, and practical tooling.
 
-## 📚Table of Contents
-- Overview
-- Features
-- Tech stack used
-- Architecture
-- Getting started (Quick build)
-- Usage examples
-- API summary (headers)
-- Development & testing
-- Troubleshooting
-- Performance & limitations
-- Roadmap
-- Contributing
-- License
+## 🎯 Why This Project
 
----
+Most JSON parsers feel like black boxes. This one is intentionally readable.
 
-## 🌟Overview
-JSON_PARSER converts JSON text into an in-memory AST (`JSONValue`) and back. The project separates responsibilities into tokenizer, parser and serializer and provides helpers for file I/O and path-based navigation (`JSONPath` / `JSONNavigator`). The codebase is intentionally compact and dependency-free (standard library only) so it is easy to read, modify and embed.
+Pipeline:
+Input JSON text -> Tokenizer -> Parser -> JSONValue tree -> Serializer / Printer / Navigator
 
-Primary goals:
-- Demonstrate a clear tokenizer → parser → AST → serializer pipeline in C++.
-- Provide utilities for querying and printing JSON.
-- Keep implementation portable and easy to build on Windows / Linux / macOS.
+The codebase keeps responsibilities separate so each stage is easier to understand and debug.
 
-C++ Standard: C++17 (required).
+## ✨ Key Features
 
----
+- Full core JSON types: object, array, string, number, boolean, null
+- Token line and column tracking for better error reporting
+- Pretty formatting and minified serialization
+- Path-based get and set operations
+- File-based command line workflow
+- Flask endpoints that call the same C++ binary
+- Minimal dependencies (C++ standard library, Flask for API wrapper)
 
-## ✨Features
-- Full JSON support: objects, arrays, strings, numbers, booleans, null.
-- Tokenizer and parser separated for clarity and testability.
-- Pretty (indented) and compact serialization with correct string escaping.
-- JSONPath & JSONNavigator utilities for selecting/traversing AST nodes.
-- File utilities (read/write) and a CLI demo (`main.cpp`).
-- No external runtime dependencies — standard library only.
-- Developer-friendly layout: header-only public API (include/) and implementations (src/).
+## 🗂️ Project Structure
 
----
-
-## 🛠️ Tech stack used
-- Language: Modern C++ (C++17)
-- Compiler compatibility: g++ (MinGW/MSYS2), clang, MSVC (with /std:c++17)
-- Build tools: g++/cl or CMake (recommended)
-- Libraries: C++ Standard Library only (strings, containers, streams, smart pointers, optional/variant if used)
-
----
-
-## 🏗️Architecture
-Project layout (actual)
+JSON_PARSER/
 - include/
-  - FileUtils.h        — file I/O helpers (read/write)
-  - JSONNavigator.h    — traversal & querying helpers
-  - JSONPath.h         — path-expression utilities
-  - JSONprinter.h      — console pretty-printer API
-  - JSONSerializer.h   — serialize / serializeCompact declarations
-  - parser.h           — AST types and parser API
-  - token.h            — token definitions and position info
-  - tokenizer.h        — lexical analyzer interface
+  - FileUtils.h
+  - JSONNavigator.h
+  - JSONPath.h
+  - JSONPrinter.h
+  - JSONSerializer.h
+  - parser.h
+  - token.h
+  - tokenizer.h
 - src/
   - FileUtils.cpp
   - JSONNavigator.cpp
@@ -70,196 +49,177 @@ Project layout (actual)
   - JSONprinter.cpp
   - JSONSerializer.cpp
   - parser.cpp
-  - main.cpp           — demo CLI / example usage
+  - main.cpp
+- server.py
+- Dockerfile
+- requirements.txt
+- test.json
+- test_pretty.json
 
-Design principles
-- Single responsibility: tokenizer ≠ parser ≠ serializer.
-- Clear public API in headers; implementations in src/.
-- Focus on readability, testability and safe defaults.
+Notes:
+- Header uses JSONPrinter.h.
+- Source file is currently named JSONprinter.cpp.
 
----
+## 🛠️ Build And Run (Windows)
 
-## 🚀Getting started (Quick build)
+Prerequisites:
+- Git
+- g++ with C++17 support (MinGW/MSYS2), or MSVC
 
-Prerequisites
-- C++ compiler with C++17 support
-- Optional: CMake (>= 3.10)
-- Windows examples shown — Linux/macOS commands are analogous.
+### 1) Clone The Repository
 
-1) Clone repository (example local path)
 ```bat
-cd C:\Users\Ranveer Verma\Desktop
-git clone <your-repo-url> JSON_PARSER
+git clone <your-repo-url>
 cd JSON_PARSER
 ```
 
-2) Quick compile with g++ (MinGW / MSYS2)
+### 2) Build The CLI (g++)
+
 ```bat
-mkdir bin
-g++ -std=c++17 -Iinclude -O2 src\*.cpp -o bin\json_parser.exe
-# run demo
-bin\json_parser.exe
+g++ -std=c++17 -Iinclude src/*.cpp -o json_parser.exe
 ```
 
-3) Quick compile with MSVC (Developer Command Prompt)
+### 3) Build The CLI (MSVC Developer Command Prompt)
+
 ```bat
-mkdir bin
-cl /EHsc /std:c++17 /I include src\*.cpp /Fe:bin\json_parser.exe
-bin\json_parser.exe
+cl /EHsc /std:c++17 /I include src\*.cpp /Fe:json_parser.exe
 ```
 
-4) Build with CMake (recommended)
-Create `CMakeLists.txt` at project root (example below), then:
+### 4) Run It
+
 ```bat
-mkdir build
-cd build
-cmake ..
-cmake --build . --config Release
-# executable will be in build\ or specified output dir
+json_parser.exe validate test.json
+json_parser.exe pretty test.json
+json_parser.exe minify test.json
 ```
 
-Minimal CMakeLists.txt (paste into project root)
-```cmake
-cmake_minimum_required(VERSION 3.10)
-project(JSON_PARSER LANGUAGES CXX)
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-include_directories(${CMAKE_SOURCE_DIR}/include)
-file(GLOB SRC "${CMAKE_SOURCE_DIR}/src/*.cpp")
-add_executable(json_parser ${SRC})
-```
+## 💻 CLI Usage
 
-Notes
-- Ensure builds use C++17. Many source files use structured bindings and other modern features.
-- Place compiled binary under `bin\` for convenience.
-
----
-
-## ✒️Usage examples
-
-Note: replace function names if your parser API differs slightly.
-
-1) Parse a JSON string and pretty-print
-```cpp
-#include "parser.h"
-#include "JSONSerializer.h"
-#include <iostream>
-
-int main() {
-    std::string src = R"({"name":"Ranveer","age":21,"marks":[98,99,93]})";
-    JSONValue root = parseJSON(src);                 // adapt to your API
-    std::cout << JSONSerializer::serialize(root, 0) << std::endl;
-    return 0;
-}
-```
-
-2) Read from file, query a path and print compact
-```cpp
-#include "FileUtils.h"
-#include "parser.h"
-#include "JSONSerializer.h"
-#include "JSONNavigator.h"
-#include <iostream>
-
-int main() {
-    std::string text = FileUtils::readFile("data/sample.json");
-    JSONValue root = parseJSON(text);
-    auto node = JSONNavigator::select(root, "/profile/college");
-    if (node) {
-        std::cout << JSONSerializer::serializeCompact(*node) << std::endl;
-    }
-    return 0;
-}
-```
-
-3) CLI usage (if implemented in `main.cpp`)
-- Example: `bin\json_parser.exe examples/sample.json`
-- Expected behavior: parse file, print pretty output, show sample navigator result.
-
----
-
-## 📡API summary (by header)
-Consult `include/*.h` for exact signatures. typical interface:
-
-- parser.h
-  - JSONValue — variant-like AST node representing object/array/string/number/bool/null
-  - parseJSON(const std::string& text) -> JSONValue / parse result
-  - parseFile(const std::string& path) -> JSONValue / optional
-
-- tokenizer.h / token.h
-  - enum TokenType { LeftBrace, RightBrace, LeftBracket, RightBracket, String, Number, True, False, Null, Colon, Comma, End, Error }
-  - struct Token { TokenType type; std::string lexeme; size_t line, col; }
-
-- JSONSerializer.h
-  - static std::string JSONSerializer::serialize(const JSONValue& value, int indent = 0);
-  - static std::string JSONSerializer::serializeCompact(const JSONValue& value);
-
-- JSONprinter.h
-  - static void JSONPrinter::print(const JSONValue& value, int indent = 0);
-
-- JSONPath.h / JSONNavigator.h
-  - JSONNavigator::select(const JSONValue& root, const std::string& path) -> optional<JSONValue>
-  - Helpers: exists(), getAsString(), getAsNumber(), etc.
-
-- FileUtils.h
-  - static std::string FileUtils::readFile(const std::string& path);
-  - static bool FileUtils::writeFile(const std::string& path, const std::string& content);
-
-If you want, a one-page reference that extracts exact signatures from your headers can be generated.
-
----
-
-## 🧪Development & testing
-
-Recommended test matrix
-- Tokenizer:
-  - Escaped strings: \" \\ \b \f \n \r \t and unicode `\uXXXX`
-  - Numbers: integers, floats, exponents, negative numbers
-  - Invalid tokens (unterminated strings, bad escapes)
-- Parser:
-  - Round-trip: parse -> serialize -> parse equality
-  - Syntax errors: clear line/column diagnostics
-- Serializer:
-  - Proper escaping behavior
-  - Pretty indentation and compact output correctness
-- Navigator:
-  - Path resolution, array indexing, missing nodes handling
-
-Test harness
-- Use Catch2 or GoogleTest.
-- Add a `tests/` folder and a CMake target `add_subdirectory(tests)`.
-- Add CI (GitHub Actions) to run builds and tests on push/PR.
-
-Example test command (after adding tests and CMake support):
+Syntax:
 ```bat
-cmake --build . --target run_tests
+json_parser.exe <command> <input.json> [extra args]
 ```
 
----
+Commands:
 
-## 👁️‍🗨️Troubleshooting
+| Command | What it does |
+|---|---|
+| `pretty <input.json>` | Writes formatted output to `<input>_pretty.json` (or prints with `stdout`) |
+| `minify <input.json>` | Writes compact output to `<input>_minified.json` (or prints with `stdout`) |
+| `validate <input.json>` | Prints `[OK] Valid JSON` when successful |
+| `show <input.json>` | Prints parsed JSON using `JSONPrinter` |
+| `get <input.json> <path>` | Prints value at path |
+| `set <input.json> <path> <value>` | Updates value in file (or prints with trailing `stdout`) |
 
-Common issues and fixes
-- Compiler error "expected ';'" near `[key, val]` in range-for:
-  - Cause: compiler not using C++17.
-  - Fix: add `-std=c++17` (g++/clang) or `/std:c++17` (MSVC).
-- Linker errors (undefined references):
-  - Ensure all `.cpp` files from `src/` are compiled and linked (especially `parser.cpp`).
-- Incorrect escaping in serializer:
-  - Inspect `JSONSerializer::escapeString()` and tokenizer string handling.
-- Headers polluting global namespace:
-  - Remove `using namespace std;` from headers; keep it in `.cpp` files only.
+Examples:
+```bat
+json_parser.exe validate test.json
+json_parser.exe pretty test.json
+json_parser.exe pretty test.json stdout
+json_parser.exe minify test.json stdout
+json_parser.exe get test.json profile.name
+json_parser.exe set test.json profile.age 22
+```
 
----
+## 📚 API Summary (From Current Headers)
 
-## ⚡Performance & limitations
-- Parser and serializer are recursive; extremely deep JSON may cause stack overflow.
-- Single-threaded tokenizer/parser; for very large files consider streaming or SAX-like processing.
-- No schema validation is included — this project focuses on parsing, navigation and serialization.
+### 🧠 parser.h
 
+- struct JSONValue : std::variant<string, double, bool, nullptr_t, JSONArray, JSONObject>
+- class Parser
+  - Parser(const std::vector<Token>&)
+  - JSONValue parse()
+- class JSONParseError : std::runtime_error
 
+### 🔎 tokenizer.h and token.h
 
+- class Tokenizer
+  - Tokenizer(const std::string&)
+  - std::vector<Token> tokenize()
+- enum class TokenType
+  - LBRACE, RBRACE, LBRACKET, RBRACKET, COLON, COMMA
+  - STRING, NUMBER, TRUE, FALSE, NUL, END_OF_FILE
+- struct Token
+  - TokenType type
+  - std::string value
+  - int line
+  - int column
 
+### 🧾 JSONSerializer.h
 
+- class JSONSerializer
+  - static std::string serialize(const JSONValue&, int indent = 0)
+  - static std::string serialize(const std::shared_ptr<JSONValue>&, int indent = 0)
+  - static std::string serializeCompact(const JSONValue&)
 
+### 🖨️ JSONPrinter.h
 
+- class JSONPrinter
+  - static void print(const JSONValue&, int indent = 0)
+
+### 🧭 JSONPath.h and JSONNavigator.h
+
+- struct PathElement
+- class JSONPath
+  - static std::vector<PathElement> parse(const std::string& path)
+- class JSONNavigator
+  - static JSONValue& get(JSONValue& root, const std::vector<PathElement>& path)
+
+### 📁 FileUtils.h
+
+- class FileUtils
+  - static std::string readFile(const std::string& path)
+  - static void writeFile(const std::string& path, const std::string& content)
+
+## 🌐 Flask API Wrapper
+
+File: server.py
+
+The Flask app executes the compiled C++ binary and returns JSON responses.
+
+Endpoints:
+- POST /validate
+  - Body: raw JSON text
+- POST /pretty
+  - Body: raw JSON text
+- POST /minify
+  - Body: raw JSON text
+- POST /show
+  - Body: raw JSON text
+- POST /get
+  - Body: { "json": "...", "path": "..." }
+- POST /set
+  - Body: { "json": "...", "path": "...", "value": "..." }
+
+Response shape:
+- { "result": "...", "error": "..." }
+
+## 🐳 Docker Usage
+
+Current Dockerfile does the following:
+- Uses ubuntu:22.04
+- Installs g++, python3, pip
+- Compiles parser binary to /app/json_parser
+- Installs Flask
+- Exposes port 5000
+- Runs server.py
+
+Build:
+- docker build -t json-parser-api .
+
+Run:
+- docker run --rm -p 5000:5000 json-parser-api
+
+## 🚨 Error Handling Highlights
+
+- Parser throws JSONParseError with line and column.
+- Runtime errors are surfaced for invalid paths, bad tokens, and malformed input.
+- CLI prints contextual parse errors for easier debugging.
+
+## 🛣️ Suggested Roadmap
+
+- Add formal tests (tokenizer, parser, serializer, path navigation)
+- Add CMakeLists.txt for reproducible cross-platform builds
+- Add CI workflow for build and test validation
+- Extend number parsing and literal handling in set command
+- Add benchmark script for large JSON files
