@@ -81,111 +81,35 @@ This compiles:
 - `test_suite.exe` - Compliance tests
 - `benchmark.exe` - Performance testing
 
-### Quick Test All Features
+### Run Tests
 ```bat
-quick_test.bat
-```
-Runs compliance tests, benchmarks, and demonstrates all 6 CLI commands.
-
-### Interactive Demo
-```bat
-demo.bat
-```
-Step-by-step demonstration of all features with examples.
-
-### Individual Commands
-```bat
-# Run tests
 test_suite.exe
+```
 
-# Run benchmarks
+### Run Benchmarks
+```bat
 benchmark.exe benchmarks\bench_*.json
+```
 
-# Use parser
+### Use Parser
+```bat
 json_parser.exe validate tests\test.json
-json_parser.exe pretty tests\test.json stdout
-json_parser.exe get tests\test.json name
+json_parser.exe pretty tests\test.json
+json_parser.exe get tests\test.json profile.name
 ```
 
 ## 💻 CLI Commands
 
-### All 6 Commands
+| Command | Description |
+|---------|-------------|
+| `validate <file>` | Validate JSON syntax |
+| `pretty <file>` | Format with indentation |
+| `minify <file>` | Compact JSON |
+| `show <file>` | Print parsed tree |
+| `get <file> <path>` | Extract value at path |
+| `set <file> <path> <value>` | Update value at path |
 
-| Command | Description | Example |
-|---------|-------------|----------|
-| `validate <file>` | Validate JSON syntax | `json_parser.exe validate tests\test.json` |
-| `pretty <file>` | Format with indentation | `json_parser.exe pretty tests\test.json stdout` |
-| `minify <file>` | Compact JSON | `json_parser.exe minify tests\test.json stdout` |
-| `show <file>` | Print parsed tree | `json_parser.exe show tests\test.json` |
-| `get <file> <path>` | Extract value at path | `json_parser.exe get tests\test.json name` |
-| `set <file> <path> <value>` | Update value at path | `json_parser.exe set tests\test.json active false` |
-
-**Note**: Add `stdout` as final argument to print instead of writing to file.
-
-### Detailed Examples
-
-#### 1. VALIDATE - Check JSON Syntax
-```bat
-json_parser.exe validate tests\test.json
-# Output: [OK] Valid JSON
-```
-
-#### 2. PRETTY - Format JSON
-```bat
-# Write to file (creates test_pretty.json)
-json_parser.exe pretty tests\test.json
-
-# Print to console
-json_parser.exe pretty tests\test.json stdout
-```
-
-#### 3. MINIFY - Compact JSON
-```bat
-# Write to file (creates test_minified.json)
-json_parser.exe minify tests\test.json
-
-# Print to console
-json_parser.exe minify tests\test.json stdout
-```
-
-#### 4. SHOW - Display Parsed Tree
-```bat
-json_parser.exe show tests\test.json
-# Shows the internal JSON structure
-```
-
-#### 5. GET - Extract Values
-```bat
-# Get top-level value
-json_parser.exe get tests\test.json name
-
-# Get array element
-json_parser.exe get tests\test.json skills[0]
-
-# Get nested value
-json_parser.exe get tests\test.json profile.age
-```
-
-#### 6. SET - Update Values
-```bat
-# Set boolean
-json_parser.exe set tests\test.json active false
-
-# Set string (use quotes)
-json_parser.exe set tests\test.json name "John"
-
-# Set number
-json_parser.exe set tests\test.json age 25
-
-# Print result instead of saving
-json_parser.exe set tests\test.json active false stdout
-```
-
-### Try the Interactive Demo
-```bat
-demo.bat
-```
-Shows all 6 commands with examples and explanations.
+Add `stdout` as final argument to print instead of writing to file.
 
 ## 📊 Performance Metrics
 
@@ -286,25 +210,6 @@ Input JSON → Tokenizer → Parser → JSONValue AST → Serializer/Navigator
 - Path navigator validates structure
 - CLI prints contextual error messages with caret
 
-## 📝 Resume Metrics
-
-> "Engineered a high-performance C++17 JSON parser achieving 70+ MB/s peak 
-> throughput with 1.3x memory overhead on string-heavy workloads. Validated 
-> robustness through 57 ECMA-404 compliance tests and stress-tested with 
-> 500+ nesting levels without stack overflow, processing 3.5+ MB across 
-> diverse JSON structures."
-
-## 🛣️ Roadmap
-
-- [x] Core parser with ECMA-404 compliance
-- [x] Comprehensive test suite (57 tests)
-- [x] Benchmark infrastructure
-- [x] Performance optimizations (70 MB/s peak)
-- [x] Deep nesting support (500+ levels)
-- [ ] CMakeLists.txt for cross-platform builds
-- [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Unicode escape sequences (\uXXXX)
-- [ ] Arena allocator for better memory efficiency
 
 ## 📄 License
 
