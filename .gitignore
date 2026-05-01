@@ -1,0 +1,64 @@
+# Executables
+*.exe
+*.out
+*.app
+
+# Compiled Object files
+*.o
+*.obj
+*.lo
+*.slo
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.a
+*.lib
+*.la
+
+# Build directories
+build/
+out/
+dist/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+*.swp
+*_results.txt
+baseline_results.txt
+optimized_results.txt
+final_metrics.txt
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Generated benchmark files (optional - uncomment if you want to regenerate)
+# benchmarks/bench_*.json
+
+# Test output files
+tests/*_pretty.json
+tests/*_minified.json

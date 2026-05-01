@@ -1,61 +1,22 @@
 #include "JSONSerializer.h"
+#include "JSONUtils.h"
 #include <sstream>
-#include <bits/stdc++.h>
+#include <iomanip>
 
-using namespace std;
-
-// -------------------------------------------------------
-// Create indentation (2 spaces * depth)
-// -------------------------------------------------------
-string JSONSerializer::indentString(int indent) {
-    return string(indent * 2, ' ');
+std::string JSONSerializer::indentString(int indent) {
+    return std::string(indent * 2, ' ');
 }
 
-// -------------------------------------------------------
-// Escape strings to be valid JSON
-// -------------------------------------------------------
-string JSONSerializer::escapeString(const std::string& s) {
-    ostringstream out;
-
-    for (char c : s) {
-        switch (c) {
-            case '\"': out << "\\\""; break;       // quote
-            case '\\': out << "\\\\"; break;       // backslash
-            case '\b': out << "\\b";  break;       // backspace
-            case '\f': out << "\\f";  break;       // form feed
-            case '\n': out << "\\n";  break;       // newline
-            case '\r': out << "\\r";  break;       // carriage return
-            case '\t': out << "\\t";  break;       // tab
-
-            default:
-                if (static_cast<unsigned char>(c) < 0x20) {
-                    out << "\\u"
-                        << std::uppercase << std::hex
-                        << setw(4) << setfill('0')
-                        << (int)c;
-                } else {
-                    out << c;
-                }
-        }
-    }
-    return out.str();
-}
-
-// -------------------------------------------------------
-// Main serialize function
-// -------------------------------------------------------
-string JSONSerializer::serialize(const JSONValue& value, int indent) {
+std::string JSONSerializer::serialize(const JSONValue& value, int indent) {
 
     // STRING
     if (value.isString()) {
-        return "\"" + escapeString(value.asString()) + "\"";
+        return "\"" + JSONUtils::escapeString(value.asString()) + "\"";
     }
 
     // NUMBER
     if (value.isNumber()) {
-        ostringstream ss;
-        ss << value.asNumber();
-        return ss.str();
+        return JSONUtils::formatNumber(value.asNumber());
     }
 
     // BOOLEAN
@@ -71,7 +32,7 @@ string JSONSerializer::serialize(const JSONValue& value, int indent) {
     // ARRAY
     if (value.isArray()) {
         const JSONArray& arr = value.asArray();
-        ostringstream out;
+        std::ostringstream out;
         out << "[\n";
 
         for (size_t i = 0; i < arr.size(); i++) {
@@ -91,13 +52,13 @@ string JSONSerializer::serialize(const JSONValue& value, int indent) {
     // OBJECT
     if (value.isObject()) {
         const JSONObject& obj = value.asObject();
-        ostringstream out;
+        std::ostringstream out;
         out << "{\n";
 
         size_t count = 0;
         for (auto& p : obj) {
             out << indentString(indent + 1)
-                << "\"" << escapeString(p.first) << "\": "
+                << "\"" << JSONUtils::escapeString(p.first) << "\": "
                 << serialize(p.second, indent + 1);
 
             if (++count < obj.size())
@@ -113,17 +74,15 @@ string JSONSerializer::serialize(const JSONValue& value, int indent) {
     return "";
 }
 
-string JSONSerializer::serializeCompact(const JSONValue& value) {
+std::string JSONSerializer::serializeCompact(const JSONValue& value) {
     // STRING
     if (value.isString()) {
-        return "\"" + escapeString(value.asString()) + "\"";
+        return "\"" + JSONUtils::escapeString(value.asString()) + "\"";
     }
 
     // NUMBER
     if (value.isNumber()) {
-        ostringstream ss;
-        ss << value.asNumber();
-        return ss.str();
+        return JSONUtils::formatNumber(value.asNumber());
     }
 
     // BOOLEAN
@@ -139,7 +98,7 @@ string JSONSerializer::serializeCompact(const JSONValue& value) {
     // ARRAY
     if (value.isArray()) {
         const JSONArray& arr = value.asArray();
-        ostringstream out;
+        std::ostringstream out;
         out << "[";
 
         for (size_t i = 0; i < arr.size(); i++) {
@@ -156,12 +115,12 @@ string JSONSerializer::serializeCompact(const JSONValue& value) {
     // OBJECT
     if (value.isObject()) {
         const JSONObject& obj = value.asObject();
-        ostringstream out;
+        std::ostringstream out;
         out << "{";
 
         size_t count = 0;
         for (auto& p : obj) {
-            out << "\"" << escapeString(p.first) << "\":"
+            out << "\"" << JSONUtils::escapeString(p.first) << "\":"
                 << serializeCompact(*p.second);
 
             if (++count < obj.size())
@@ -175,10 +134,7 @@ string JSONSerializer::serializeCompact(const JSONValue& value) {
     return "";
 }
 
-// -------------------------------------------------------
-// Pointer overload
-// -------------------------------------------------------
-string JSONSerializer::serialize(const shared_ptr<JSONValue>& ptr, int indent) {
+std::string JSONSerializer::serialize(const std::shared_ptr<JSONValue>& ptr, int indent) {
     return serialize(*ptr, indent);
 }
 

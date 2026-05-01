@@ -1,0 +1,46 @@
+{
+  "version": "1.0.0",
+  "application": {
+    "name": "MyApp",
+    "port": 8080,
+    "host": "localhost",
+    "debug": false
+  },
+  "database": {
+    "host": "db.example.com",
+    "port": 5432,
+    "name": "mydb",
+    "credentials": {
+      "username": "admin",
+      "password": "secret123"
+    },
+    "pool": {
+      "min": 5,
+      "max": 20,
+      "timeout": 30000
+    }
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "outputs": [
+      "console",
+      "file"
+    ],
+    "file": {
+      "path": "/var/log/app.log",
+      "maxSize": "100MB",
+      "maxFiles": 10
+    }
+  },
+  "features": {
+    "authentication": true,
+    "caching": true,
+    "compression": true,
+    "rateLimit": {
+      "enabled": true,
+      "maxRequests": 100,
+      "windowMs": 60000
+    }
+  }
+}

@@ -1,5 +1,6 @@
 #pragma once
 #include "parser.h"
+#include "JSONUtils.h"
 #include <iostream>
 #include <string>
 
@@ -9,5 +10,4 @@ public:
 
 private:
     static void printIndent(int indent);
-    static std::string escapeString(const std::string& s);
 };

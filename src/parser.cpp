@@ -3,6 +3,7 @@
 #include <memory>
 #include <cstdlib>
 #include <sstream>
+#include <charconv>
 
 // Helper: friendly token type name (for messages)
 static std::string tokenTypeName(TokenType t) {
@@ -96,8 +97,20 @@ JSONValue Parser::parseValue() {
         }
         case TokenType::NUMBER: {
             advance();
+            double val;
+            
+            // Try fast path with from_chars (C++17)
+            auto result = std::from_chars(t.value.data(), 
+                                         t.value.data() + t.value.size(), 
+                                         val);
+            
+            if (result.ec == std::errc()) {
+                return JSONValue(val);
+            }
+            
+            // Fallback to stod for edge cases
             try {
-                double val = std::stod(t.value);
+                val = std::stod(t.value);
                 return JSONValue(val);
             } catch (...) {
                 throw JSONParseError("Invalid number format: " + t.value, t.line, t.column);

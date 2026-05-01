@@ -16,16 +16,16 @@ private:
 public:
     Tokenizer(const std::string& text) : input(text) {}
 
-    bool isAtEnd() const {
+    inline bool isAtEnd() const {
         return pos >= input.size();
     }
 
-    char peek() const {
+    inline char peek() const {
         return isAtEnd() ? '\0' : input[pos];
     }
 
     // Advance one character and update line + column
-    char advance() {
+    inline char advance() {
         if (isAtEnd())
             return '\0';
 

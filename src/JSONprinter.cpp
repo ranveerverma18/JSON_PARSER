@@ -1,125 +1,70 @@
 #include "../include/JSONPrinter.h"
+#include "../include/JSONUtils.h"
 #include "../include/parser.h"
 #include <iostream>
-#include <iomanip>
-#include <sstream>
-
-using namespace std;
-
-// ---------------------
-// Escaping the strings to be valid JSON
-// ---------------------
-
-// ------------------------------------------------------------
-// WHY WE ESCAPE STRINGS IN JSONPRINTER
-//
-// JSONPrinter prints the JSON tree for debugging / pretty print.
-// But JSONValues may contain REAL control chars like '\n' or '\t'
-// because the tokenizer interprets escape sequences.
-//
-// Printing these raw to console produces:
-//
-//      Hello    World
-//      He said "Yo!"
-//
-// which BREAKS the pretty-printed layout and looks like invalid JSON.
-//
-// Therefore JSONPrinter also re-escapes strings (same as serializer)
-// so the printed output is readable and valid-looking.
-//
-// IMPORTANT: JSONPrinter is NOT serialization, but must still escape
-// control characters to avoid confusing debug output.
-// ------------------------------------------------------------
-
-string JSONPrinter::escapeString(const std::string& s) {
-    ostringstream out;
-
-    for (char c : s) {
-        switch (c) {
-            case '\"': out << "\\\""; break;
-            case '\\': out << "\\\\"; break;
-            case '\b': out << "\\b";  break;
-            case '\f': out << "\\f";  break;
-            case '\n': out << "\\n";  break;
-            case '\r': out << "\\r";  break;
-            case '\t': out << "\\t";  break;
-
-            default:
-                if (static_cast<unsigned char>(c) < 0x20) {
-                    out << "\\u"
-                        << setw(4) << setfill('0') << uppercase << hex
-                        << (int)c;
-                } else {
-                    out << c;
-                }
-        }
-    }
-
-    return out.str();
-}
 
 void JSONPrinter::printIndent(int indent) {
     for (int i = 0; i < indent; ++i) {
-        cout << ' ';
+        std::cout << ' ';
     }
 }
 
 void JSONPrinter::print(const JSONValue& value, int indent) {
 
     // --- STRING ---
-    if (holds_alternative<string>(value)) {
-        cout << "\"" << escapeString(get<string>(value)) << "\"";
+    if (std::holds_alternative<std::string>(value)) {
+        std::cout << "\"" << JSONUtils::escapeString(std::get<std::string>(value)) << "\"";
     }
 
     // --- NUMBER ---
-    else if (holds_alternative<double>(value)) {
-        cout << get<double>(value);
+    else if (std::holds_alternative<double>(value)) {
+        std::cout << JSONUtils::formatNumber(std::get<double>(value));
     }
 
     // --- BOOLEAN ---
-    else if (holds_alternative<bool>(value)) {
-        cout << (get<bool>(value) ? "true" : "false");
+    else if (std::holds_alternative<bool>(value)) {
+        std::cout << (std::get<bool>(value) ? "true" : "false");
     }
 
     // --- NULL ---
-    else if (holds_alternative<nullptr_t>(value)) {
-        cout << "null";
+    else if (std::holds_alternative<std::nullptr_t>(value)) {
+        std::cout << "null";
     }
 
     // --- ARRAY ---
-    else if (holds_alternative<JSONArray>(value)) {
-        const JSONArray& arr = get<JSONArray>(value);
+    else if (std::holds_alternative<JSONArray>(value)) {
+        const JSONArray& arr = std::get<JSONArray>(value);
 
-        cout << "[\n";
+        std::cout << "[\n";
         for (size_t i = 0; i < arr.size(); ++i) {
             printIndent(indent + 2);
             print(*arr[i], indent + 2);
-            if (i < arr.size() - 1) cout << ",";
-            cout << "\n";
+            if (i < arr.size() - 1) std::cout << ",";
+            std::cout << "\n";
         }
         printIndent(indent);
-        cout << "]";
+        std::cout << "]";
     }
 
     // --- OBJECT ---
-    else if (holds_alternative<JSONObject>(value)) {
-        const JSONObject& obj = get<JSONObject>(value);
+    else if (std::holds_alternative<JSONObject>(value)) {
+        const JSONObject& obj = std::get<JSONObject>(value);
 
-        cout << "{\n";
+        std::cout << "{\n";
         size_t count = 0;
 
         for (const auto& [key, valPtr] : obj) {
             printIndent(indent + 2);
-            cout << "\"" << escapeString(key) << "\": ";
+            std::cout << "\"" << JSONUtils::escapeString(key) << "\": ";
             print(*valPtr, indent + 2);
 
-            if (count < obj.size() - 1) cout << ",";
-            cout << "\n";
+            if (count < obj.size() - 1) std::cout << ",";
+            std::cout << "\n";
             ++count;
         }
 
         printIndent(indent);
-        cout << "}";
+        std::cout << "}";
     }
 }
 

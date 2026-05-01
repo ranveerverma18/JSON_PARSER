@@ -9,55 +9,53 @@
 
 #include "token.h"   // only need token definitions here
 
-using namespace std;
-
 struct JSONValue; // forward declaring the structure
 
-using JSONArray = vector<shared_ptr<JSONValue>>;
-using JSONObject = unordered_map<string, shared_ptr<JSONValue>>;
+using JSONArray = std::vector<std::shared_ptr<JSONValue>>;
+using JSONObject = std::unordered_map<std::string, std::shared_ptr<JSONValue>>;
 
-struct JSONValue : variant<
-    string,
+struct JSONValue : std::variant<
+    std::string,
     double,
     bool,
-    nullptr_t,
+    std::nullptr_t,
     JSONArray,
     JSONObject
 > {
-    using variant::variant;
+    using std::variant<std::string, double, bool, std::nullptr_t, JSONArray, JSONObject>::variant;
 
     // --- Accessors ---
-    bool isString() const { return holds_alternative<string>(*this); }
-    bool isNumber() const { return holds_alternative<double>(*this); }
-    bool isBool()   const { return holds_alternative<bool>(*this); }
-    bool isNull()   const { return holds_alternative<nullptr_t>(*this); }
-    bool isArray()  const { return holds_alternative<JSONArray>(*this); }
-    bool isObject() const { return holds_alternative<JSONObject>(*this); }
+    bool isString() const { return std::holds_alternative<std::string>(*this); }
+    bool isNumber() const { return std::holds_alternative<double>(*this); }
+    bool isBool()   const { return std::holds_alternative<bool>(*this); }
+    bool isNull()   const { return std::holds_alternative<std::nullptr_t>(*this); }
+    bool isArray()  const { return std::holds_alternative<JSONArray>(*this); }
+    bool isObject() const { return std::holds_alternative<JSONObject>(*this); }
 
-    const string& asString() const { return get<string>(*this); }
-    double asNumber() const { return get<double>(*this); }
-    bool asBool() const { return get<bool>(*this); }
-    const JSONArray& asArray() const { return get<JSONArray>(*this); }
-    const JSONObject& asObject() const { return get<JSONObject>(*this); }
+    const std::string& asString() const { return std::get<std::string>(*this); }
+    double asNumber() const { return std::get<double>(*this); }
+    bool asBool() const { return std::get<bool>(*this); }
+    const JSONArray& asArray() const { return std::get<JSONArray>(*this); }
+    const JSONObject& asObject() const { return std::get<JSONObject>(*this); }
 
     // --- Mutable Accessors ---
-    JSONArray& asArray() { return get<JSONArray>(*this); }
-    JSONObject& asObject() { return get<JSONObject>(*this); }
+    JSONArray& asArray() { return std::get<JSONArray>(*this); }
+    JSONObject& asObject() { return std::get<JSONObject>(*this); }
 
     // --- Operator Overloads ---
-    JSONValue& operator[](const string& key) {
-        if (!isObject()) throw runtime_error("Not a JSON object");
-        auto& obj = get<JSONObject>(*this);
+    JSONValue& operator[](const std::string& key) {
+        if (!isObject()) throw std::runtime_error("Not a JSON object");
+        auto& obj = std::get<JSONObject>(*this);
         if (!obj.count(key))
-            obj[key] = make_shared<JSONValue>(nullptr);
+            obj[key] = std::make_shared<JSONValue>(nullptr);
         return *obj[key];
     }
 
     JSONValue& operator[](size_t index) {
-        if (!isArray()) throw runtime_error("Not a JSON array");
-        auto& arr = get<JSONArray>(*this);
+        if (!isArray()) throw std::runtime_error("Not a JSON array");
+        auto& arr = std::get<JSONArray>(*this);
         if (index >= arr.size())
-            throw runtime_error("Array index out of bounds");
+            throw std::runtime_error("Array index out of bounds");
         return *arr[index];
     }
 };
@@ -81,11 +79,11 @@ public:
 // ----------------------
 class Parser {
 private:
-    vector<Token> tokens;
+    std::vector<Token> tokens;
     size_t pos = 0;
 
 public:
-    Parser(const vector<Token>& t) : tokens(t) {}
+    Parser(const std::vector<Token>& t) : tokens(t) {}
     JSONValue parse();
 
 private:
